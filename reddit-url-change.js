@@ -157,8 +157,10 @@
       if (postContainer) {
         postContainer.style.cursor = "pointer";
         postContainer.addEventListener("click", (e) => {
-          // Only redirect if not clicking on interactive elements
-          const interactive = e.target.closest('button, a, [role="button"]');
+          // Check for any Reddit action buttons or interactive elements
+          const interactive = e.target.closest(
+            'button, a, [role="button"], shreddit-comment-action-row, [data-click-id="share"], [data-click-id="comments"], [data-click-id="save"], [data-testid="post-comment-header"], [data-click-id="upvote"], [data-click-id="downvote"]'
+          );
           if (!interactive) {
             e.preventDefault();
             e.stopPropagation();
