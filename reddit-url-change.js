@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Direct Link
 // @namespace    http://tampermonkey.net/
-// @version      1.02
+// @version      1.05
 // @description  On New Reddit, makes post titles and post boxes link directly to the external website instead of the Reddit comments page.
 // @author       narrowstacks
 // @match        *://www.reddit.com/*
@@ -107,9 +107,19 @@
   }
 
   function modifyLinks() {
-    const posts = document.querySelectorAll("shreddit-post");
+    const posts = document.querySelectorAll(
+      "shreddit-post:not([direct-link-processed])"
+    );
 
     posts.forEach((post) => {
+      // Skip if we've already processed this post
+      if (post.hasAttribute("direct-link-processed")) {
+        return;
+      }
+
+      // Mark as processed immediately to prevent any race conditions
+      post.setAttribute("direct-link-processed", "true");
+
       // Check if post has shadowRoot
       if (!post.shadowRoot) {
         return;
@@ -121,21 +131,6 @@
         return;
       }
 
-      // Find and modify the title link
-      const titleSlot = post.shadowRoot.querySelector('slot[name="title"]');
-      if (titleSlot) {
-        const titleElements = titleSlot.assignedElements();
-        for (const element of titleElements) {
-          const titleLink = element.querySelector("a");
-          if (titleLink) {
-            titleLink.href = externalLink.href;
-            titleLink.addEventListener("click", (e) => {
-              e.stopPropagation();
-            });
-          }
-        }
-      }
-
       // Find and modify the full-post link
       const fullPostLinkSlot = post.shadowRoot.querySelector(
         'slot[name="full-post-link"]'
@@ -143,32 +138,44 @@
       if (fullPostLinkSlot) {
         const fullPostElements = fullPostLinkSlot.assignedElements();
         for (const element of fullPostElements) {
-          if (element.tagName === "A") {
+          if (
+            element.tagName === "A" &&
+            !element.hasAttribute("direct-link-processed")
+          ) {
+            element.setAttribute("direct-link-processed", "true");
             element.href = externalLink.href;
-            element.addEventListener("click", (e) => {
-              e.stopPropagation();
-            });
           }
         }
       }
 
-      // Try to modify the post container
-      const postContainer = post.shadowRoot.querySelector(".grid");
-      if (postContainer) {
-        postContainer.style.cursor = "pointer";
-        postContainer.addEventListener("click", (e) => {
-          // Check for any Reddit action buttons or interactive elements
-          const interactive = e.target.closest(
-            'button, a, [role="button"], shreddit-comment-action-row, [data-click-id="share"], [data-click-id="comments"], [data-click-id="save"], [data-testid="post-comment-header"], [data-click-id="upvote"], [data-click-id="downvote"]'
+      // Find and modify the title link
+      const titleSlot = post.shadowRoot.querySelector('slot[name="title"]');
+      if (titleSlot) {
+        const titleElements = titleSlot.assignedElements();
+        for (const element of titleElements) {
+          const titleLink = element.querySelector(
+            "a:not([direct-link-processed])"
           );
-          if (!interactive) {
-            e.preventDefault();
-            e.stopPropagation();
-            window.location.href = externalLink.href;
+          if (titleLink) {
+            titleLink.setAttribute("direct-link-processed", "true");
+            titleLink.href = externalLink.href;
           }
-        });
+        }
       }
     });
+  }
+
+  // Debounce function to limit how often we run modifications
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
   }
 
   // Wait for the page to be ready
@@ -176,12 +183,20 @@
     // Initial check
     modifyLinks();
 
+    // Debounce the modification function
+    const debouncedModifyLinks = debounce(modifyLinks, 250);
+
     // Observe for dynamically loaded posts
     const observer = new MutationObserver((mutations) => {
+      let shouldModify = false;
       for (const mutation of mutations) {
         if (mutation.addedNodes.length) {
-          setTimeout(modifyLinks, 100); // Small delay to ensure slots are populated
+          shouldModify = true;
+          break;
         }
+      }
+      if (shouldModify) {
+        debouncedModifyLinks();
       }
     });
 
