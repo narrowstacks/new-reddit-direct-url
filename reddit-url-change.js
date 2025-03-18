@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Reddit Direct Link
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.02
 // @description  On New Reddit, makes post titles and post boxes link directly to the external website instead of the Reddit comments page.
 // @author       narrowstacks
 // @match        *://www.reddit.com/*
