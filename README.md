@@ -4,7 +4,7 @@ A Tampermonkey userscript that enhances Reddit browsing by making post titles li
 
 ## Features
 
-- Automatically redirects post title clicks to external links instead of Reddit comment sections
+- Automatically redirects post title and post box clicks to external links instead of Reddit comment sections
 - Preserves Reddit media content (images, videos, galleries) behavior
 - Works with dynamically loaded content (infinite scrolling)
 - Maintains original functionality for Reddit-hosted media
@@ -54,7 +54,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Author
 
-Your Name
+[narrowstacks](https://github.com/narrowstacks/new-reddit-direct-url)
 
 ## Version
 
