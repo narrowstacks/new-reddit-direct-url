@@ -109,7 +109,7 @@
   function modifyLinks() {
     const posts = document.querySelectorAll("shreddit-post");
 
-    posts.forEach((post, index) => {
+    posts.forEach((post) => {
       // Check if post has shadowRoot
       if (!post.shadowRoot) {
         return;
@@ -146,7 +146,8 @@
           if (element.tagName === "A") {
             element.href = externalLink.href;
             element.addEventListener("click", (e) => {
-
+              e.stopPropagation();
+            });
           }
         }
       }
@@ -170,8 +171,6 @@
 
   // Wait for the page to be ready
   function init() {
-    console.log("Initializing Reddit Direct Link script...");
-
     // Initial check
     modifyLinks();
 
@@ -187,7 +186,8 @@
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-    });  }
+    });
+  }
 
   // Ensure the script runs after the page is loaded
   if (document.readyState === "loading") {
