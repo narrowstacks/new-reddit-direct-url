@@ -6,6 +6,7 @@
 // @author       narrowstacks
 // @match        *://www.reddit.com/*
 // @grant        none
+// @license MIT
 // ==/UserScript==
 
 (function () {
@@ -39,14 +40,12 @@
         for (const link of links) {
           // Skip if it's a Reddit media link
           if (isRedditMediaLink(link.href)) {
-            console.log("Skipping Reddit media link:", link.href);
             return null;
           }
           if (
             !link.href.includes("/comments/") &&
             !link.href.includes("reddit.com")
           ) {
-            console.log("Found external link in thumbnail:", link.href);
             return link;
           }
         }
@@ -57,17 +56,12 @@
     const contentHref = post.getAttribute("content-href");
     if (contentHref) {
       if (isRedditMediaLink(contentHref)) {
-        console.log("Skipping Reddit media content:", contentHref);
         return null;
       }
       if (
         !contentHref.includes("/comments/") &&
         !contentHref.includes("reddit.com")
       ) {
-        console.log(
-          "Found external link in content-href attribute:",
-          contentHref
-        );
         return { href: contentHref };
       }
     }
@@ -84,14 +78,12 @@
         const links = element.querySelectorAll("a");
         for (const link of links) {
           if (isRedditMediaLink(link.href)) {
-            console.log("Skipping Reddit media link:", link.href);
             continue;
           }
           if (
             !link.href.includes("/comments/") &&
             !link.href.includes("reddit.com")
           ) {
-            console.log(`Found external link in ${slotName} slot:`, link.href);
             return link;
           }
         }
@@ -99,17 +91,12 @@
         // Check for href attribute on the element itself
         if (element.href) {
           if (isRedditMediaLink(element.href)) {
-            console.log("Skipping Reddit media link:", element.href);
             continue;
           }
           if (
             !element.href.includes("/comments/") &&
             !element.href.includes("reddit.com")
           ) {
-            console.log(
-              `Found external link on ${slotName} element:`,
-              element.href
-            );
             return element;
           }
         }
@@ -120,23 +107,17 @@
   }
 
   function modifyLinks() {
-    console.log("Starting modifyLinks()...");
     const posts = document.querySelectorAll("shreddit-post");
-    console.log(`Found ${posts.length} shreddit-post elements`);
 
     posts.forEach((post, index) => {
-      console.log(`Processing post ${index + 1}:`);
-
       // Check if post has shadowRoot
       if (!post.shadowRoot) {
-        console.log("No shadowRoot found for this post");
         return;
       }
 
       // Find external link first
       const externalLink = findExternalLink(post);
       if (!externalLink) {
-        console.log("No external link found or post is Reddit media");
         return;
       }
 
@@ -147,10 +128,8 @@
         for (const element of titleElements) {
           const titleLink = element.querySelector("a");
           if (titleLink) {
-            console.log("Modifying title link");
             titleLink.href = externalLink.href;
             titleLink.addEventListener("click", (e) => {
-              console.log("Title click intercepted");
               e.stopPropagation();
             });
           }
@@ -165,12 +144,9 @@
         const fullPostElements = fullPostLinkSlot.assignedElements();
         for (const element of fullPostElements) {
           if (element.tagName === "A") {
-            console.log("Modifying full-post link");
             element.href = externalLink.href;
             element.addEventListener("click", (e) => {
-              console.log("Full post link click intercepted");
-              e.stopPropagation();
-            });
+
           }
         }
       }
@@ -178,7 +154,6 @@
       // Try to modify the post container
       const postContainer = post.shadowRoot.querySelector(".grid");
       if (postContainer) {
-        console.log("Found post container, modifying behavior");
         postContainer.style.cursor = "pointer";
         postContainer.addEventListener("click", (e) => {
           // Only redirect if not clicking on interactive elements
@@ -202,10 +177,8 @@
 
     // Observe for dynamically loaded posts
     const observer = new MutationObserver((mutations) => {
-      console.log("Mutation observed:", mutations.length, "changes");
       for (const mutation of mutations) {
         if (mutation.addedNodes.length) {
-          console.log("New nodes added, running modifyLinks()");
           setTimeout(modifyLinks, 100); // Small delay to ensure slots are populated
         }
       }
@@ -214,16 +187,12 @@
     observer.observe(document.body, {
       childList: true,
       subtree: true,
-    });
-    console.log("MutationObserver set up");
-  }
+    });  }
 
   // Ensure the script runs after the page is loaded
   if (document.readyState === "loading") {
-    console.log("Page still loading, waiting for DOMContentLoaded");
     document.addEventListener("DOMContentLoaded", init);
   } else {
-    console.log("Page already loaded, running init immediately");
     init();
   }
 })();
